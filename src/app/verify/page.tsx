@@ -126,6 +126,7 @@ export default function VerifyPage() {
   {loading ? 'Analyzing...' : 'Verify Legitimacy'}
 </button>
 
+
             
             {/* Debug info */}
             <div className="mt-2 text-xs text-gray-500">
@@ -158,21 +159,11 @@ export default function VerifyPage() {
 
         <div className="mt-8 text-center">
           <Link
-<<<<<<< HEAD
-            href="http://localhost:3001"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-purple-700 hover:text-purple-800 font-medium"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open Backend (localhost:3001)
-=======
             href="/dashboard"
             className="inline-flex items-center gap-2 text-purple-700 hover:text-purple-800 font-medium"
           >
             <ExternalLink className="h-4 w-4" />
             Go to Dashboard
->>>>>>> 8411bf70f70c72aa6d358f718f7cd3f0cb06d348
           </Link>
         </div>
       </main>
@@ -372,7 +363,3 @@ function FundraiserResult({ data }: { data: any }) {
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8411bf70f70c72aa6d358f718f7cd3f0cb06d348
