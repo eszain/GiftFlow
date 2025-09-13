@@ -57,7 +57,7 @@ GiftFlow is a platform that responsibly bridges wealth gaps by matching Patrons 
    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding
+   # Simple Supabase Authentication
 
    # Supabase
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
