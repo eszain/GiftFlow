@@ -1,12 +1,52 @@
-type Entry<T> = { value: T; expiresAt: number };
-const store = new Map<string, Entry<any>>();
+// Simple in-memory cache for development
+// In production, you'd use Redis or similar
 
-export function cacheGet<T>(key: string): T | undefined {
-  const hit = store.get(key);
-  if (!hit) return undefined;
-  if (Date.now() > hit.expiresAt) { store.delete(key); return undefined; }
-  return hit.value as T;
+interface CacheEntry {
+  value: any;
+  expires: number;
 }
+
+class SimpleCache {
+  private cache = new Map<string, CacheEntry>();
+  private defaultTtl = 5 * 60 * 1000; // 5 minutes
+
+  set(key: string, value: any, ttlMs?: number): void {
+    const expires = Date.now() + (ttlMs || this.defaultTtl);
+    this.cache.set(key, { value, expires });
+  }
+
+  get(key: string): any | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    if (Date.now() > entry.expires) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.value;
+  }
+
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+}
+
+export const cache = new SimpleCache();
+
+// Legacy functions for backward compatibility
+export function cacheGet<T>(key: string): T | undefined {
+  return cache.get(key) as T | undefined;
+}
+
 export function cacheSet<T>(key: string, value: T, ttlMs: number) {
-  store.set(key, { value, expiresAt: Date.now() + ttlMs });
+  cache.set(key, value, ttlMs);
 }
