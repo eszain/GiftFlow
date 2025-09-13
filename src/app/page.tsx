@@ -119,6 +119,12 @@ export default function Home() {
               >
                 Browse Wishes
               </Link>
+              <Link
+                href="/verify"
+                className="bg-purple-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Verify Links
+              </Link>
             </div>
           )}
 
@@ -135,6 +141,12 @@ export default function Home() {
                 className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
               >
                 Browse Wishes
+              </Link>
+              <Link
+                href="/verify"
+                className="bg-purple-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Verify Links
               </Link>
             </div>
           )}
