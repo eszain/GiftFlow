@@ -1,0 +1,129 @@
+{
+  "timestamp": "2025-09-13T05:26:19.625Z",
+  "summary": {
+    "critical": 1,
+    "warnings": 12,
+    "recommendations": 1,
+    "total": 14
+  },
+  "issues": {
+    "critical": [
+      {
+        "level": "CRITICAL",
+        "category": "SECRETS",
+        "message": "Found Hardcoded Password: password = \"***\"",
+        "file": "src\\__tests__\\security.test.ts",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.576Z"
+      }
+    ],
+    "warnings": [
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "file": ".env",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: CLERK_SECRET_KEY",
+        "file": ".env",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL",
+        "file": ".env",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "file": ".env",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY",
+        "file": ".env",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "file": ".env.example",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: CLERK_SECRET_KEY",
+        "file": ".env.example",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL",
+        "file": ".env.example",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "file": ".env.example",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY",
+        "file": ".env.example",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "ENVIRONMENT",
+        "message": "Missing required environment variable: DATABASE_URL",
+        "file": ".env.example",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.604Z"
+      },
+      {
+        "level": "WARNING",
+        "category": "CSRF",
+        "message": "Form without CSRF protection",
+        "file": "src\\app\\onboarding\\page.tsx",
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.618Z"
+      }
+    ],
+    "recommendations": [
+      {
+        "level": "INFO",
+        "category": "DATABASE",
+        "message": "Consider adding database indexes for performance",
+        "file": null,
+        "line": null,
+        "timestamp": "2025-09-13T05:26:19.602Z"
+      }
+    ]
+  }
+}
