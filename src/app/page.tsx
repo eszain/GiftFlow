@@ -125,16 +125,16 @@ export default function Home() {
           {user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/wishes"
+                href="/dashboard"
                 className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
-                Browse Wishes
+                Go to Dashboard
               </Link>
               <Link
                 href="/wishes"
                 className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
               >
-                Create Wish
+                Browse Wishes
               </Link>
             </div>
           )}
