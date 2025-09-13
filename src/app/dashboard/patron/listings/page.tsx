@@ -24,6 +24,12 @@ export default function PatronListingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [donationModal, setDonationModal] = useState<{ isOpen: boolean; listing: Listing | null }>({
+    isOpen: false,
+    listing: null
+  });
+  const [donationAmount, setDonationAmount] = useState('');
+  const [donating, setDonating] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -60,7 +66,6 @@ export default function PatronListingsPage() {
         .from('listings')
         .select('*')
         .eq('status', 'active')
-        .eq('verification_status', 'verified')
         .order('created_at', { ascending: false });
 
       if (selectedCategory) {
@@ -74,7 +79,13 @@ export default function PatronListingsPage() {
         return;
       }
 
-      setListings(data || []);
+      // Filter for verified listings on the client side for now
+      const verifiedListings = data?.filter(listing => 
+        listing.verification_status === 'verified' || 
+        listing.verification_status === 'pending' // Show pending ones too for testing
+      ) || [];
+      
+      setListings(verifiedListings);
     } catch (err) {
       setError('Failed to fetch listings');
     } finally {
@@ -104,6 +115,62 @@ export default function PatronListingsPage() {
 
   const getFundingPercentage = (raised: number, requested: number) => {
     return Math.round((raised / requested) * 100);
+  };
+
+  const handleDonateClick = (listing: Listing) => {
+    setDonationModal({ isOpen: true, listing });
+    setDonationAmount('');
+  };
+
+  const handleDonationSubmit = async () => {
+    if (!donationModal.listing || !donationAmount || parseFloat(donationAmount) <= 0) {
+      return;
+    }
+
+    setDonating(true);
+    try {
+      const amount = parseFloat(donationAmount);
+      const newRaisedAmount = donationModal.listing.amount_raised + amount;
+
+      // Update the listing's raised amount
+      const { error } = await supabase
+        .from('listings')
+        .update({ amount_raised: newRaisedAmount })
+        .eq('id', donationModal.listing.id);
+
+      if (error) {
+        console.error('Error updating listing:', error);
+        setError('Failed to process donation. Please try again.');
+        return;
+      }
+
+      // Update the local state
+      setListings(prevListings => 
+        prevListings.map(listing => 
+          listing.id === donationModal.listing!.id 
+            ? { ...listing, amount_raised: newRaisedAmount }
+            : listing
+        )
+      );
+
+      // Close modal and reset
+      setDonationModal({ isOpen: false, listing: null });
+      setDonationAmount('');
+      
+      // Show success message
+      alert(`Thank you for your donation of $${amount.toFixed(2)}!`);
+      
+    } catch (err) {
+      console.error('Donation error:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setDonating(false);
+    }
+  };
+
+  const closeDonationModal = () => {
+    setDonationModal({ isOpen: false, listing: null });
+    setDonationAmount('');
   };
 
   if (!user) {
@@ -261,16 +328,107 @@ export default function PatronListingsPage() {
                   <div className="text-sm text-gray-500">
                     ${(listing.amount_requested - listing.amount_raised).toLocaleString()} still needed
                   </div>
-                  <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Donate Now
-                  </button>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => handleDonateClick(listing)}
+                      className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                    >
+                      <Heart className="h-4 w-4 mr-2" />
+                      Donate Now
+                    </button>
+                    {listing.verification_status === 'pending' && (
+                      <span className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium">
+                        Pending Verification
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Donation Modal */}
+      {donationModal.isOpen && donationModal.listing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Make a Donation
+            </h3>
+            
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                {donationModal.listing.title}
+              </h4>
+              <p className="text-gray-600 text-sm mb-4">
+                by {donationModal.listing.charity_name}
+              </p>
+              
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Goal:</span>
+                  <span className="font-semibold">${donationModal.listing.amount_requested.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Raised:</span>
+                  <span className="font-semibold">${donationModal.listing.amount_raised.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Still needed:</span>
+                  <span className="font-semibold text-red-600">
+                    ${(donationModal.listing.amount_requested - donationModal.listing.amount_raised).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="donationAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                Donation Amount ($)
+              </label>
+              <input
+                type="number"
+                id="donationAmount"
+                value={donationAmount}
+                onChange={(e) => setDonationAmount(e.target.value)}
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={closeDonationModal}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={donating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDonationSubmit}
+                disabled={donating || !donationAmount || parseFloat(donationAmount) <= 0}
+                className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {donating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Heart className="h-4 w-4 mr-2" />
+                    Donate ${donationAmount || '0.00'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

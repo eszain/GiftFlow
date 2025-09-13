@@ -122,6 +122,49 @@ export default function DashboardPage() {
 
 // Charity Dashboard Component
 function CharityDashboard() {
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    totalRaised: 0,
+    fulfilledWishes: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: listings, error } = await supabase
+          .from('listings')
+          .select('status, amount_raised')
+          .eq('charity_id', user.id);
+
+        if (error) {
+          console.error('Error fetching stats:', error);
+          return;
+        }
+
+        const activeListings = listings?.filter(l => l.status === 'active').length || 0;
+        const totalRaised = listings?.reduce((sum, l) => sum + (l.amount_raised || 0), 0) || 0;
+        const fulfilledWishes = listings?.filter(l => l.status === 'fulfilled').length || 0;
+
+        setStats({
+          activeListings,
+          totalRaised,
+          fulfilledWishes
+        });
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [supabase]);
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -174,15 +217,21 @@ function CharityDashboard() {
       {/* Quick Stats */}
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-3xl font-bold text-indigo-600 mb-2">0</div>
+          <div className="text-3xl font-bold text-indigo-600 mb-2">
+            {loading ? '...' : stats.activeListings}
+          </div>
           <div className="text-gray-600">Active Listings</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-3xl font-bold text-green-600 mb-2">$0</div>
+          <div className="text-3xl font-bold text-green-600 mb-2">
+            {loading ? '...' : `$${stats.totalRaised.toLocaleString()}`}
+          </div>
           <div className="text-gray-600">Total Raised</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-3xl font-bold text-blue-600 mb-2">0</div>
+          <div className="text-3xl font-bold text-blue-600 mb-2">
+            {loading ? '...' : stats.fulfilledWishes}
+          </div>
           <div className="text-gray-600">Fulfilled Wishes</div>
         </div>
       </div>
@@ -192,6 +241,48 @@ function CharityDashboard() {
 
 // Patron Dashboard Component
 function PatronDashboard() {
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    totalDonated: 0,
+    charitiesHelped: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch active listings count
+        const { data: listings, error: listingsError } = await supabase
+          .from('listings')
+          .select('id')
+          .eq('status', 'active');
+
+        if (listingsError) {
+          console.error('Error fetching listings:', listingsError);
+        }
+
+        // For now, we'll set donations to 0 since we don't have a donations table yet
+        // In the future, you'd fetch from a donations table
+        const activeListings = listings?.length || 0;
+        const totalDonated = 0; // TODO: Fetch from donations table
+        const charitiesHelped = 0; // TODO: Fetch from donations table
+
+        setStats({
+          activeListings,
+          totalDonated,
+          charitiesHelped
+        });
+      } catch (err) {
+        console.error('Error fetching patron stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [supabase]);
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -244,15 +335,21 @@ function PatronDashboard() {
       {/* Quick Stats */}
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-3xl font-bold text-indigo-600 mb-2">0</div>
-          <div className="text-gray-600">Donations Made</div>
+          <div className="text-3xl font-bold text-indigo-600 mb-2">
+            {loading ? '...' : stats.activeListings}
+          </div>
+          <div className="text-gray-600">Active Listings</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-3xl font-bold text-green-600 mb-2">$0</div>
+          <div className="text-3xl font-bold text-green-600 mb-2">
+            {loading ? '...' : `$${stats.totalDonated.toLocaleString()}`}
+          </div>
           <div className="text-gray-600">Total Donated</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-3xl font-bold text-blue-600 mb-2">0</div>
+          <div className="text-3xl font-bold text-blue-600 mb-2">
+            {loading ? '...' : stats.charitiesHelped}
+          </div>
           <div className="text-gray-600">Charities Helped</div>
         </div>
       </div>
