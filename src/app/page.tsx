@@ -1,8 +1,37 @@
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import Link from "next/link";
-import { Heart, Users, Shield, CheckCircle } from "lucide-react";
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Heart, Users, Shield, CheckCircle } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      // Get user role from user metadata
+      if (user?.user_metadata?.role) {
+        setUserRole(user.user_metadata.role);
+      }
+      
+      setLoading(false);
+    };
+
+    getUser();
+  }, [supabase.auth]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
@@ -14,16 +43,51 @@ export default function Home() {
               <span className="ml-2 text-2xl font-bold text-gray-900">GiftFlow</span>
             </div>
             <div className="flex items-center space-x-4">
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                    Sign In
+              {loading ? (
+                <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              ) : user ? (
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <div className="text-sm text-gray-600">
+                      {user.email}
+                    </div>
+                    <div className="flex items-center justify-end space-x-1">
+                      <div className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        userRole === 'patron' 
+                          ? 'bg-green-100 text-green-800' 
+                          : userRole === 'charity'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {userRole === 'patron' ? 'Patron' : 
+                         userRole === 'charity' ? 'Charity' : 
+                         'User'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Sign Out
                   </button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  <Link
+                    href="/login"
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -41,150 +105,108 @@ export default function Home() {
             tax-deductible wishes. Every wish is verified for tax eligibility before publication.
           </p>
           
-          <SignedOut>
+          {!user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <SignInButton mode="modal">
-                <button className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors">
-                  Get Started
-                </button>
-              </SignInButton>
-              <Link 
-                href="/wishes"
-                className="border border-indigo-600 text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-50 transition-colors"
-              >
-                Browse Wishes
-              </Link>
-            </div>
-          </SignedOut>
-          
-          <SignedIn>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                href="/dashboard"
+              <Link
+                href="/signup"
                 className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
-                Go to Dashboard
+                Get Started
               </Link>
-              <Link 
+              <Link
                 href="/wishes"
-                className="border border-indigo-600 text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-50 transition-colors"
+                className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
               >
                 Browse Wishes
               </Link>
             </div>
-          </SignedIn>
+          )}
+
+          {user && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/wishes"
+                className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Browse Wishes
+              </Link>
+              <Link
+                href="/wishes"
+                className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
+              >
+                Create Wish
+              </Link>
+            </div>
+          )}
         </div>
 
-        {/* Features */}
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <Users className="h-12 w-12 text-indigo-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">For Charities</h3>
-            <p className="text-gray-600">
-              Post your tax-deductible needs as wishes. Choose from pre-verified categories 
-              or submit custom wishes for verification.
-            </p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <Heart className="h-12 w-12 text-indigo-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">For Patrons</h3>
-            <p className="text-gray-600">
-              Fulfill wishes and receive automatic tax receipts. Track your impact 
-              with detailed analytics and tax documentation.
-            </p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <Shield className="h-12 w-12 text-indigo-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Tax Compliance</h3>
-            <p className="text-gray-600">
-              Every wish is verified for tax deductibility. Our system ensures 
-              only eligible wishes are published and fulfilled.
-            </p>
-          </div>
-        </div>
-
-        {/* How It Works */}
+        {/* Features Section */}
         <div className="mt-20">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
             How GiftFlow Works
           </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-indigo-600">1</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Create Account</h3>
-              <p className="text-gray-600 text-sm">
-                Sign up as a Charity, Patron, or both
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6 bg-white rounded-lg shadow-sm">
+              <Users className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Charities Post Wishes
+              </h3>
+              <p className="text-gray-600">
+                Charities post their needs as tax-deductible wishes with supporting documentation.
               </p>
             </div>
-            
-            <div className="text-center">
-              <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-indigo-600">2</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Post or Browse</h3>
-              <p className="text-gray-600 text-sm">
-                Charities post wishes, Patrons browse and filter
+            <div className="text-center p-6 bg-white rounded-lg shadow-sm">
+              <Shield className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Verification Process
+              </h3>
+              <p className="text-gray-600">
+                Our system verifies each wish for tax deductibility using OCR, rules engine, and AI.
               </p>
             </div>
-            
-            <div className="text-center">
-              <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-indigo-600">3</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Verify & Fulfill</h3>
-              <p className="text-gray-600 text-sm">
-                System verifies tax eligibility, Patrons fulfill wishes
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-indigo-600">4</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Get Receipts</h3>
-              <p className="text-gray-600 text-sm">
-                Automatic tax receipts and documentation
+            <div className="text-center p-6 bg-white rounded-lg shadow-sm">
+              <CheckCircle className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Patrons Fulfill
+              </h3>
+              <p className="text-gray-600">
+                Patrons browse verified wishes and fulfill them, receiving tax-deductible receipts.
               </p>
             </div>
           </div>
         </div>
 
         {/* Trust Indicators */}
-        <div className="mt-20 bg-white rounded-lg shadow-md p-8">
-          <div className="text-center">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Tax-Deductible Guarantee
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Every wish published on GiftFlow has been verified for tax deductibility. 
-              Our automated system and human moderators ensure compliance with IRS guidelines. 
-              Only eligible wishes are published and fulfilled.
-            </p>
+        <div className="mt-20 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">
+            Trusted by Charities and Patrons
+          </h2>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-indigo-600">100%</div>
+              <div className="text-gray-600">Tax Verified</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-indigo-600">24/7</div>
+              <div className="text-gray-600">Support</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-indigo-600">Secure</div>
+              <div className="text-gray-600">Platform</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-indigo-600">Free</div>
+              <div className="text-gray-600">To Use</div>
+            </div>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Heart className="h-6 w-6 text-indigo-400" />
-              <span className="ml-2 text-xl font-bold">GiftFlow</span>
-            </div>
-            <p className="text-gray-400 mb-4">
-              Connecting communities through tax-deductible wishes
-            </p>
-            <p className="text-sm text-gray-500">
-              This platform provides standardized receipts and summaries. 
-              Consult a tax professional for your specific situation.
-            </p>
+      <footer className="bg-white border-t mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center text-gray-600">
+            <p>&copy; 2024 GiftFlow. Making a difference, one wish at a time.</p>
           </div>
         </div>
       </footer>
