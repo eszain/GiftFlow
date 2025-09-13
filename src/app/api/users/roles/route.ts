@@ -1,93 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { userRolesSchema } from '@/lib/validations/user';
 
-const prisma = new PrismaClient();
-
-export async function POST(request: NextRequest) {
+// PATCH /api/users/roles - Update current user's roles (self-assignment only)
+export async function PATCH(request: NextRequest) {
   try {
     const { userId } = auth();
-    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { clerkUserId, role } = body;
+    const validatedRoles = userRolesSchema.parse(body);
 
-    // Verify the user is setting their own role
-    if (clerkUserId !== userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Validate role
-    if (!['patron', 'charity'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-    }
-
-    // Check if user already exists
-    let user = await prisma.user.findUnique({
-      where: { clerkUserId: userId }
+    // Get current user
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
     });
 
-    if (user) {
-      // Update existing user's role
-      const updatedRoles = {
-        ...(user.roles as any),
-        [role]: true,
-        roleSelected: true
-      };
-
-      user = await prisma.user.update({
-        where: { clerkUserId: userId },
-        data: {
-          roles: updatedRoles,
-          roleSelected: true
-        }
-      });
-    } else {
-      // Create new user with role
-      const roles = {
-        charity: role === 'charity',
-        patron: role === 'patron',
-        moderator: false,
-        admin: false
-      };
-
-      user = await prisma.user.create({
-        data: {
-          clerkUserId: userId,
-          roles: roles,
-          roleSelected: true,
-          displayName: null, // Will be updated from Clerk profile
-          city: null,
-          emailVerified: false
-        }
-      });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Prevent privilege escalation - users cannot assign admin or moderator roles to themselves
+    if (validatedRoles.admin || validatedRoles.moderator) {
+      return NextResponse.json({ 
+        error: 'Cannot assign admin or moderator roles to yourself' 
+      }, { status: 403 });
+    }
+
+    // Update user roles (only charity and patron roles allowed for self-assignment)
+    const updatedUser = await prisma.user.update({
+      where: { clerkUserId: userId },
+      data: {
+        roles: {
+          charity: validatedRoles.charity,
+          patron: validatedRoles.patron,
+          moderator: false, // Always false for self-assignment
+          admin: false, // Always false for self-assignment
+        },
+      },
+    });
+
+    // Log audit trail
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: user.id,
+        entityType: 'user',
+        entityId: user.id,
+        action: 'update_roles_self',
+        details: {
+          oldRoles: user.roles,
+          newRoles: updatedUser.roles,
+        },
+      },
+    });
+
     return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        roles: user.roles,
-        roleSelected: user.roleSelected
-      }
+      id: updatedUser.id,
+      roles: updatedUser.roles,
+      message: 'User roles updated successfully',
     });
 
   } catch (error) {
-    console.error('Error setting user role:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Role update failed:', error);
+    
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+// GET /api/users/roles - Get current user's roles
 export async function GET(request: NextRequest) {
   try {
     const { userId } = auth();
-    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -97,11 +87,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         roles: true,
-        roleSelected: true,
-        displayName: true,
-        city: true,
-        emailVerified: true
-      }
+      },
     });
 
     if (!user) {
@@ -109,70 +95,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      user: {
-        id: user.id,
-        roles: user.roles,
-        roleSelected: user.roleSelected,
-        displayName: user.displayName,
-        city: user.city,
-        emailVerified: user.emailVerified
-      }
+      id: user.id,
+      roles: user.roles,
     });
 
   } catch (error) {
-    console.error('Error fetching user roles:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const { userId } = auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { roles } = body;
-
-    // Validate roles object
-    if (!roles || typeof roles !== 'object') {
-      return NextResponse.json({ error: 'Invalid roles format' }, { status: 400 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { clerkUserId: userId }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Update user roles
-    const updatedUser = await prisma.user.update({
-      where: { clerkUserId: userId },
-      data: {
-        roles: roles
-      }
-    });
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: updatedUser.id,
-        roles: updatedUser.roles
-      }
-    });
-
-  } catch (error) {
-    console.error('Error updating user roles:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Role retrieval failed:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

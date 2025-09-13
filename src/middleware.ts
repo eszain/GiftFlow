@@ -1,65 +1,98 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Define protected API routes
-const isProtectedApi = createRouteMatcher([
-  "/api/wishes(.*)",
-  "/api/fulfillments(.*)",
-  "/api/analytics(.*)",
-  "/api/moderation(.*)",
-  "/api/admin(.*)",
-  "/api/internal(.*)",
-  "/api/users(.*)",
-]);
+export async function middleware(req: NextRequest) {
+  let res = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
 
-// Define protected pages
-const isProtectedPage = createRouteMatcher([
-  "/dashboard(.*)",
-  "/create-wish(.*)",
-  "/my-wishes(.*)",
-  "/fulfill(.*)",
-  "/moderation(.*)",
-  "/admin(.*)",
-  "/wishes(.*)",
-  "/analytics(.*)",
-]);
-
-// Define role selection page
-const isRoleSelectionPage = createRouteMatcher([
-  "/role-selection",
-]);
-
-export default clerkMiddleware((auth, req) => {
-  const { userId } = auth();
-  
-  // Protect API routes
-  if (isProtectedApi(req)) {
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          res = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: any) {
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          res = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          res.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
     }
+  );
+
+  // Get the current session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Define protected routes
+  const protectedApiRoutes = [
+    "/api/wishes(.*)", "/api/fulfillments(.*)", "/api/analytics(.*)",
+    "/api/moderation(.*)", "/api/admin(.*)", "/api/internal(.*)",
+  ];
+
+  const protectedPageRoutes = [
+    "/dashboard(.*)", "/create-wish(.*)", "/my-wishes(.*)",
+    "/fulfill(.*)", "/moderation(.*)", "/admin(.*)",
+  ];
+
+  const isProtectedApi = protectedApiRoutes.some(route => 
+    new RegExp(route.replace('(.*)', '.*')).test(req.nextUrl.pathname)
+  );
+
+  const isProtectedPage = protectedPageRoutes.some(route => 
+    new RegExp(route.replace('(.*)', '.*')).test(req.nextUrl.pathname)
+  );
+
+  // Check API routes
+  if (isProtectedApi && !session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Handle role selection page
-  if (isRoleSelectionPage(req)) {
-    if (!userId) {
-      const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
-    }
-    // Allow access to role selection page for authenticated users
-    return NextResponse.next();
+  // Check page routes
+  if (isProtectedPage && !session) {
+    const signInUrl = new URL('/login', req.url);
+    signInUrl.searchParams.set('redirect_url', req.url);
+    return NextResponse.redirect(signInUrl);
   }
 
-  // Protect pages
-  if (isProtectedPage(req)) {
-    if (!userId) {
-      // Redirect to sign-in page
-      const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
-    }
-  }
-});
+  return res;
+}
 
 export const config = {
   matcher: [
