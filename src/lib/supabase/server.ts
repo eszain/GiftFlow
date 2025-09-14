@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
-export function createClient() {
-  const cookieStore = cookies();
+export const createClient = cache(async () => {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,7 +27,7 @@ export function createClient() {
       },
     }
   );
-}
+});
 
 // Service role client for admin operations (server-side only)
 export function createServiceClient() {

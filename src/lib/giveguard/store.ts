@@ -109,7 +109,51 @@ export type Donation = {
   createdAt: Date;
 };
 
-export const donations: Donation[] = [];
+export const donations: Donation[] = [
+  {
+    id: 1,
+    subjectType: 'charity',
+    subjectId: 1,
+    amount: 5000, // $50.00 in cents
+    currency: 'USD',
+    deductible: true,
+    createdAt: new Date('2024-03-15')
+  },
+  {
+    id: 2,
+    subjectType: 'charity',
+    subjectId: 2,
+    amount: 10000, // $100.00 in cents
+    currency: 'USD',
+    deductible: true,
+    createdAt: new Date('2024-06-20')
+  },
+  {
+    id: 3,
+    subjectType: 'personal',
+    amount: 2500, // $25.00 in cents
+    currency: 'USD',
+    deductible: false,
+    createdAt: new Date('2024-08-10')
+  },
+  {
+    id: 4,
+    subjectType: 'charity',
+    subjectId: 3,
+    amount: 15000, // $150.00 in cents
+    currency: 'USD',
+    deductible: true,
+    createdAt: new Date('2024-11-25')
+  },
+  {
+    id: 5,
+    subjectType: 'personal',
+    amount: 7500, // $75.00 in cents
+    currency: 'USD',
+    deductible: false,
+    createdAt: new Date('2024-12-01')
+  }
+];
 
 export type Campaign = {
   id: number;

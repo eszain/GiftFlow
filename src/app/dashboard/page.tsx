@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Receipt, FileText } from 'lucide-react';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -316,18 +316,38 @@ function PatronDashboard() {
         {/* My Donations */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center mb-4">
-            <Plus className="h-8 w-8 text-green-600 mr-3" />
-            <h2 className="text-xl font-semibold text-gray-900">My Donations</h2>
+            <Receipt className="h-8 w-8 text-green-600 mr-3" />
+            <h2 className="text-xl font-semibold text-gray-900">Donation Summary</h2>
           </div>
           <p className="text-gray-600 mb-6">
-            Track your donations and view tax-deductible receipts.
+            Track your donations, generate tax summaries, and export receipts for tax filing.
           </p>
           <Link
-            href="/dashboard/patron/donations"
+            href="/dashboard/donations"
             className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center"
           >
-            <Plus className="h-5 w-5 mr-2" />
-            View Donations
+            <Receipt className="h-5 w-5 mr-2" />
+            View Donation Summary
+          </Link>
+        </div>
+      </div>
+
+      {/* Tax Form Preparation - Centered on its own row */}
+      <div className="flex justify-center">
+        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md w-full">
+          <div className="flex items-center mb-4">
+            <FileText className="h-8 w-8 text-blue-600 mr-3" />
+            <h2 className="text-xl font-semibold text-gray-900">Tax Form Preparation</h2>
+          </div>
+          <p className="text-gray-600 mb-6">
+            Prepare draft Schedule A and Form 8283 for your charitable donations with IRS compliance.
+          </p>
+          <Link
+            href="/dashboard/tax-forms"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center"
+          >
+            <FileText className="h-5 w-5 mr-2" />
+            Prepare Tax Forms
           </Link>
         </div>
       </div>
