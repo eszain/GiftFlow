@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Shield, ArrowLeft, ExternalLink, Heart, Search, AlertTriangle, CheckCircle, XCircle, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 function isUrl(value: string) {
@@ -58,97 +58,160 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <Link href="/" className="flex items-center text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              Back to GiftFlow
+            <Link href="/" className=" rounded-xl flex items-center hover:text-gray-900 transition-colors duration-200 group">
+              <ArrowLeft className=" h-5 w-5 mr-2 group-hover:-translate-x-1 text-indigo-600 transition-transform duration-200" />
             </Link>
             <div className="flex items-center">
-              <Shield className="h-8 w-8 text-purple-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">GiveGuard</span>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+                  <Heart className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">GiftFlow</span>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Verify Fundraiser Legitimacy</h1>
-          <p className="text-xl text-gray-600">
-            Ensure your donations go to legitimate causes with conservative checks + AI signals
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg mb-6">
+            <Shield className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Verify Fundraiser Legitimacy
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Ensure your donations go to legitimate causes with our advanced verification system combining 
+            <span className="font-semibold text-indigo-600"> AI analysis</span>, 
+            <span className="font-semibold text-purple-600"> platform verification</span>, and 
+            <span className="font-semibold text-blue-600"> trust scoring</span>
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <form onSubmit={onSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="input" className="block text-sm font-medium text-gray-700 mb-2">
-                Fundraiser URL, Charity Name, or EIN
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200/50 p-8">
+          <form onSubmit={onSubmit} className="space-y-8">
+            <div className="space-y-4">
+              <label htmlFor="input" className="block text-lg font-semibold text-gray-800 mb-3">
+                <div className="flex items-center space-x-2">
+                  <Search className="h-5 w-5 text-indigo-600" />
+                  <span>Fundraiser URL, Charity Name, or EIN</span>
+                </div>
               </label>
-              <input
-                id="input"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Paste fundraiser URL, type charity name, or enter EIN"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-              />
+              <div className="relative">
+                <input
+                  id="input"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Paste fundraiser URL, type charity name, or enter EIN"
+                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
+                />
+                {mode && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="flex items-center space-x-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium">
+                      <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                      <span className="capitalize">{mode}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
               {mode && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Detected: <span className="font-medium text-purple-700">{mode}</span>
-                </p>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Detected: <span className="font-semibold text-indigo-600 capitalize">{mode}</span></span>
+                </div>
               )}
             </div>
 
             {mode === 'url' && (
-              <div>
-                <label htmlFor="desc" className="block text-sm font-medium text-gray-700 mb-2">
-                  Additional Description (Optional)
+              <div className="space-y-3">
+                <label htmlFor="desc" className="block text-lg font-semibold text-gray-800">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    <span>Additional Description (Optional)</span>
+                  </div>
                 </label>
                 <textarea
                   id="desc"
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="(Optional) Paste the fundraiser description here for a better summary and risk analysis."
-                  className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  rows={3}
+                  placeholder="Paste the fundraiser description here for enhanced AI analysis and risk assessment..."
+                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 placeholder-gray-400 resize-none"
+                  rows={4}
                 />
+                <p className="text-sm text-gray-500 flex items-center space-x-1">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Providing additional context helps our AI make more accurate assessments</span>
+                </p>
               </div>
             )}
 
-<button
-  type="submit"
-  className="w-full !bg-purple-600 !text-white px-6 py-3 !rounded-lg font-semibold hover:!bg-purple-700 disabled:!bg-gray-400 transition-colors text-lg"
->
-  {loading ? 'Analyzing...' : 'Verify Legitimacy'}
-</button>
-
-            
-            {/* Debug info */}
-            <div className="mt-2 text-xs text-gray-500">
-              Debug: Input length: {input.length}, Loading: {loading.toString()}
-            </div>
+            <button
+              type="submit"
+              style={{
+                background: 'linear-gradient(to right, #4f46e5, #9333ea)',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              className="w-full !bg-gradient-to-r !from-indigo-600 !to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-3"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Analyzing with AI...</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-5 w-5" />
+                  <span>Verify Legitimacy</span>
+                </>
+              )}
+            </button>
           </form>
 
           {error && (
-            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-              {error}
+            <div className="mt-8 rounded-xl border-2 border-red-200 bg-red-50 p-6">
+              <div className="flex items-start space-x-3">
+                <XCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800 mb-2">Verification Failed</h3>
+                  <p className="text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
           )}
 
           {result && (
-            <div className="mt-8">
+            <div className="mt-8 space-y-6">
               {result.preview && (result.preview.title || result.preview.description || result.preview.image) && (
-                <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Preview</h4>
-                  {result.preview.image && (
-                    <img src={result.preview.image} alt="Preview" className="mb-3 max-h-40 rounded-md object-cover" />
-                  )}
-                  {result.preview.title && <p className="text-sm font-medium text-gray-900">{result.preview.title}</p>}
-                  {result.preview.description && <p className="text-sm text-gray-700 mt-1">{result.preview.description}</p>}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <ExternalLink className="h-5 w-5 text-blue-600" />
+                    <h4 className="text-lg font-bold text-gray-900">Preview</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {result.preview.image && (
+                      <img 
+                        src={result.preview.image} 
+                        alt="Preview" 
+                        className="w-full max-h-48 rounded-xl object-cover shadow-md" 
+                      />
+                    )}
+                    <div className="space-y-2">
+                      {result.preview.title && (
+                        <h5 className="text-lg font-semibold text-gray-900 leading-tight">{result.preview.title}</h5>
+                      )}
+                      {result.preview.description && (
+                        <p className="text-gray-700 leading-relaxed">{result.preview.description}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
               <VerificationResult data={result} />
@@ -156,17 +219,7 @@ export default function VerifyPage() {
           )}
         </div>
 
-        <div className="mt-8 text-center">
-          <Link
-            href="http://localhost:3001"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-purple-700 hover:text-purple-800 font-medium"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open Backend (localhost:3001)
-          </Link>
-        </div>
+       
       </main>
     </div>
   );
@@ -182,16 +235,16 @@ function Badge({
   children: React.ReactNode;
 }) {
   const palette: Record<string, string> = {
-    green: 'bg-green-100 text-green-800 ring-green-200',
-    yellow: 'bg-yellow-100 text-yellow-800 ring-yellow-200',
-    red: 'bg-red-100 text-red-800 ring-red-200',
-    gray: 'bg-gray-100 text-gray-800 ring-gray-200',
-    purple: 'bg-purple-100 text-purple-800 ring-purple-200',
-    blue: 'bg-blue-100 text-blue-800 ring-blue-200',
+    green: 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 ring-green-300 shadow-green-100',
+    yellow: 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 ring-yellow-300 shadow-yellow-100',
+    red: 'bg-gradient-to-r from-red-100 to-rose-100 text-red-800 ring-red-300 shadow-red-100',
+    gray: 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 ring-gray-300 shadow-gray-100',
+    purple: 'bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800 ring-purple-300 shadow-purple-100',
+    blue: 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 ring-blue-300 shadow-blue-100',
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${palette[color]}`}
+      className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-bold ring-2 ring-inset shadow-sm ${palette[color]}`}
     >
       {children}
     </span>
@@ -216,25 +269,41 @@ function CharityResult({ data }: { data: any }) {
   if (!org) return <div className="text-sm">No result</div>;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-xl font-semibold">{org.name}</h3>
-          <p className="text-sm text-gray-500">
-            EIN: {org.ein} • {org.subsection || '—'}
-          </p>
+    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-8 shadow-lg">
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex-1">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="p-2 bg-green-100 rounded-xl">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{org.name}</h3>
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg text-gray-700">
+              <span className="font-semibold">EIN:</span> {org.ein}
+            </p>
+            <p className="text-lg text-gray-700">
+              <span className="font-semibold">Status:</span> {org.subsection || 'Not specified'}
+            </p>
+          </div>
         </div>
-        <Badge color={data?.deductible ? 'purple' : 'gray'}>
-          {data?.deductible ? '✅ Tax-deductible' : 'Not tax-deductible'}
+        <Badge color={data?.deductible ? 'green' : 'gray'}>
+          {data?.deductible ? '✅ Tax-deductible' : '❌ Not tax-deductible'}
         </Badge>
       </div>
 
       {Array.isArray(data?.sources) && data.sources.length > 0 && (
-        <div className="mt-3">
-          <p className="text-xs font-medium text-gray-600">Sources</p>
-          <ul className="mt-1 text-xs text-gray-600 list-disc pl-4">
+        <div className="bg-white/60 rounded-xl p-4 border border-green-200">
+          <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center space-x-2">
+            <ExternalLink className="h-4 w-4" />
+            <span>Verification Sources</span>
+          </h4>
+          <ul className="space-y-2">
             {data.sources.map((s: any, i: number) => (
-              <li key={i}>{s.name}</li>
+              <li key={i} className="flex items-center space-x-2 text-sm text-gray-700">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>{s.name}</span>
+              </li>
             ))}
           </ul>
         </div>
@@ -268,43 +337,79 @@ function FundraiserResult({ data }: { data: any }) {
         : 'yellow',
   } as const;
 
+  const bgColor = verdict === 'SCAM_LIKELY' 
+    ? 'from-red-50 to-rose-50 border-red-200' 
+    : verdict === 'LIKELY_LEGIT' 
+    ? 'from-green-50 to-emerald-50 border-green-200'
+    : 'from-yellow-50 to-amber-50 border-yellow-200';
+
   return (
-    <div className="border border-gray-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-xl font-semibold">
-            {data?.scrapedContent?.title || `${platform} Fundraiser`}
-          </h3>
-          <p className="text-sm text-gray-500">
-            {platformVerified ? '✅ Platform verified' : '⚠️ Platform not verified'}
-            {data?.scrapedContent?.organizer && ` • Organized by ${data.scrapedContent.organizer}`}
-          </p>
+    <div className={`bg-gradient-to-r ${bgColor} border-2 rounded-2xl p-8 shadow-lg`}>
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex-1">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className={`p-2 rounded-xl ${
+              verdict === 'SCAM_LIKELY' ? 'bg-red-100' : 
+              verdict === 'LIKELY_LEGIT' ? 'bg-green-100' : 'bg-yellow-100'
+            }`}>
+              {verdict === 'SCAM_LIKELY' ? (
+                <XCircle className="h-6 w-6 text-red-600" />
+              ) : verdict === 'LIKELY_LEGIT' ? (
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              ) : (
+                <AlertTriangle className="h-6 w-6 text-yellow-600" />
+              )}
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {data?.scrapedContent?.title || `${platform} Fundraiser`}
+            </h3>
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg text-gray-700 flex items-center space-x-2">
+              {platformVerified ? (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              )}
+              <span>
+                {platformVerified ? 'Platform verified' : 'Platform not verified'}
+              </span>
+            </p>
+            {data?.scrapedContent?.organizer && (
+              <p className="text-lg text-gray-700">
+                <span className="font-semibold">Organized by:</span> {data.scrapedContent.organizer}
+              </p>
+            )}
+          </div>
         </div>
         <Badge color={badge.color as any}>{badge.text}</Badge>
       </div>
 
       {/* Optional progress panel if you pass scrapedContent */}
       {data?.scrapedContent && (
-        <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-800 mb-3">Fundraising Progress</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600">Goal</p>
-              <p className="font-semibold">{data.scrapedContent.goal || 'Not specified'}</p>
+        <div className="mb-6 bg-white/70 rounded-xl p-6 border border-gray-200 shadow-sm">
+          <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center space-x-2">
+            <Heart className="h-5 w-5 text-pink-500" />
+            <span>Fundraising Progress</span>
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-600 mb-1">Goal</p>
+              <p className="text-lg font-bold text-gray-900">{data.scrapedContent.goal || 'Not specified'}</p>
             </div>
-            <div>
-              <p className="text-gray-600">Raised</p>
-              <p className="font-semibold text-purple-700">
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-600 mb-1">Raised</p>
+              <p className="text-lg font-bold text-indigo-600">
                 {data.scrapedContent.raised || 'Not specified'}
               </p>
             </div>
-            <div>
-              <p className="text-gray-600">Donors</p>
-              <p className="font-semibold">{data.scrapedContent.donors || '0'}</p>
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-600 mb-1">Donors</p>
+              <p className="text-lg font-bold text-purple-600">{data.scrapedContent.donors || '0'}</p>
             </div>
-            <div>
-              <p className="text-gray-600">Time Left</p>
-              <p className="font-semibold">{data.scrapedContent.daysLeft || 'Unknown'}</p>
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-600 mb-1">Time Left</p>
+              <p className="text-lg font-bold text-orange-600">{data.scrapedContent.daysLeft || 'Unknown'}</p>
             </div>
           </div>
         </div>
@@ -314,51 +419,78 @@ function FundraiserResult({ data }: { data: any }) {
       {platformVerified ? (
         ai ? (
           <div
-            className={`p-4 rounded-lg border ${
+            className={`p-6 rounded-xl border-2 shadow-sm ${
               ai.risk_band === 'high'
-                ? 'bg-yellow-50 border-yellow-200'
+                ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300'
                 : ai.risk_band === 'low'
-                ? 'bg-green-50 border-green-200'
-                : 'bg-blue-50 border-blue-200'
+                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
+                : 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300'
             }`}
           >
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">🤖</span>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-white/80 rounded-xl shadow-sm">
+                <Sparkles className="h-6 w-6 text-indigo-600" />
+              </div>
               <div className="flex-1">
-                <h4 className="text-sm font-semibold mb-2">AI Analysis</h4>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">AI Analysis</h4>
                 {Array.isArray(ai.reasons) && ai.reasons.length > 0 ? (
-                  <ul className="text-sm leading-relaxed list-disc pl-5">
-                    {ai.reasons.slice(0, 5).map((r: string, i: number) => (
-                      <li key={i}>{r}</li>
-                    ))}
-                  </ul>
+                  <div className="space-y-3">
+                    <ul className="space-y-2">
+                      {ai.reasons.slice(0, 5).map((r: string, i: number) => (
+                        <li key={i} className="flex items-start space-x-2 text-sm text-gray-700">
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <span>{r}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : (
                   <p className="text-sm text-gray-700">No specific reasons provided.</p>
                 )}
                 {Array.isArray(ai.highlight_quotes) && ai.highlight_quotes.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs font-medium text-gray-700">Notable evidence</p>
-                    <ul className="text-xs text-gray-700 list-disc pl-5">
+                  <div className="mt-6 bg-white/60 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm font-bold text-gray-800 mb-3 flex items-center space-x-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>Notable Evidence</span>
+                    </p>
+                    <ul className="space-y-2">
                       {ai.highlight_quotes.slice(0, 3).map((q: string, i: number) => (
-                        <li key={i}>&ldquo;{q}&rdquo;</li>
+                        <li key={i} className="text-sm text-gray-700 italic bg-gray-50 p-3 rounded-lg border-l-4 border-indigo-300">
+                          &ldquo;{q}&rdquo;
+                        </li>
                       ))}
                     </ul>
                   </div>
                 )}
               </div>
             </div>
-            {reason && <p className="mt-3 text-xs text-gray-600">Verdict reason: {reason}</p>}
+            {reason && (
+              <div className="mt-4 p-3 bg-white/60 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Verdict reason:</span> {reason}
+                </p>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="p-4 rounded-lg border bg-blue-50 border-blue-200">
-            <p className="text-sm">No AI analysis available for this link.</p>
+          <div className="p-6 rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+            <div className="flex items-center space-x-3">
+              <Sparkles className="h-6 w-6 text-blue-600" />
+              <p className="text-sm font-medium text-blue-800">No AI analysis available for this link.</p>
+            </div>
           </div>
         )
       ) : (
         // Platform not verified → do NOT show AI; show deterministic warning only
-        <div className="p-4 rounded-lg border bg-red-50 border-red-200">
-          <p className="text-sm">We could not verify the platform or the URL looks unsafe.</p>
-          {reason && <p className="mt-2 text-xs text-red-700">{reason}</p>}
+        <div className="p-6 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50">
+          <div className="flex items-start space-x-3">
+            <XCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-lg font-bold text-red-800 mb-2">Platform Verification Failed</h4>
+              <p className="text-sm text-red-700">We could not verify the platform or the URL looks unsafe.</p>
+              {reason && <p className="mt-2 text-sm text-red-600 font-medium">{reason}</p>}
+            </div>
+          </div>
         </div>
       )}
     </div>

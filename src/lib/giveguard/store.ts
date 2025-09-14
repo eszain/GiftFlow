@@ -1,3 +1,66 @@
+// Simple in-memory store for GiveGuard
+// In production, you'd use a proper database
+
+interface StoreEntry {
+  data: any;
+  timestamp: number;
+  ttl: number;
+}
+
+class GiveGuardStore {
+  private store = new Map<string, StoreEntry>();
+
+  set(key: string, data: any, ttlMs: number = 5 * 60 * 1000): void {
+    this.store.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl: ttlMs
+    });
+  }
+
+  get(key: string): any | null {
+    const entry = this.store.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.store.delete(key);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  delete(key: string): void {
+    this.store.delete(key);
+  }
+
+  clear(): void {
+    this.store.clear();
+  }
+
+  size(): number {
+    return this.store.size;
+  }
+
+  // Clean up expired entries
+  cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.store.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.store.delete(key);
+      }
+    }
+  }
+}
+
+export const giveGuardStore = new GiveGuardStore();
+
+// Clean up expired entries every 5 minutes
+setInterval(() => {
+  giveGuardStore.cleanup();
+}, 5 * 60 * 1000);
+
+// Legacy types and data for backward compatibility
 export type Org = {
   name: string;
   ein: string;           // 9 digits
@@ -46,7 +109,51 @@ export type Donation = {
   createdAt: Date;
 };
 
-export const donations: Donation[] = [];
+export const donations: Donation[] = [
+  {
+    id: 1,
+    subjectType: 'charity',
+    subjectId: 1,
+    amount: 5000, // $50.00 in cents
+    currency: 'USD',
+    deductible: true,
+    createdAt: new Date('2024-03-15')
+  },
+  {
+    id: 2,
+    subjectType: 'charity',
+    subjectId: 2,
+    amount: 10000, // $100.00 in cents
+    currency: 'USD',
+    deductible: true,
+    createdAt: new Date('2024-06-20')
+  },
+  {
+    id: 3,
+    subjectType: 'personal',
+    amount: 2500, // $25.00 in cents
+    currency: 'USD',
+    deductible: false,
+    createdAt: new Date('2024-08-10')
+  },
+  {
+    id: 4,
+    subjectType: 'charity',
+    subjectId: 3,
+    amount: 15000, // $150.00 in cents
+    currency: 'USD',
+    deductible: true,
+    createdAt: new Date('2024-11-25')
+  },
+  {
+    id: 5,
+    subjectType: 'personal',
+    amount: 7500, // $75.00 in cents
+    currency: 'USD',
+    deductible: false,
+    createdAt: new Date('2024-12-01')
+  }
+];
 
 export type Campaign = {
   id: number;

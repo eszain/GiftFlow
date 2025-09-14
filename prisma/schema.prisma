@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      String   // 'patron' or 'charity'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listings Listing[]
+
+  @@map("users")
+}
+
+model Listing {
+  id                  String   @id @default(cuid())
+  title               String
+  description         String
+  category            String
+  amountRequested     Decimal  @map("amount_requested")
+  amountRaised        Decimal  @default(0) @map("amount_raised")
+  status              String   @default("active") // 'active', 'fulfilled', 'cancelled'
+  charityId           String   @map("charity_id")
+  charityName         String   @map("charity_name")
+  charityEmail        String   @map("charity_email")
+  images              String[] // Array of image URLs
+  documents           String[] // Array of document URLs for tax verification
+  taxDeductible       Boolean  @default(false) @map("tax_deductible")
+  verificationStatus  String   @default("pending") @map("verification_status") // 'pending', 'verified', 'rejected'
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  charity User @relation(fields: [charityId], references: [id], onDelete: Cascade)
+
+  @@map("listings")
+}

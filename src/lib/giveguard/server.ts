@@ -1,25 +1,38 @@
-import dotenv from 'dotenv';
-import path from 'path';
+// GiveGuard Server Configuration
+// This file contains server-side utilities for the GiveGuard verification system
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+import { config } from './lib/config';
 
-import express from 'express';
-import cors from 'cors';
-import { CONFIG } from './lib/config';
-import charityRoutes from './routes/charity';
-import fundraiserRoutes from './routes/fundraiser';
+export class GiveGuardServer {
+  private static instance: GiveGuardServer;
+  
+  private constructor() {}
+  
+  public static getInstance(): GiveGuardServer {
+    if (!GiveGuardServer.instance) {
+      GiveGuardServer.instance = new GiveGuardServer();
+    }
+    return GiveGuardServer.instance;
+  }
+  
+  public getConfig() {
+    return config;
+  }
+  
+  public async healthCheck(): Promise<boolean> {
+    try {
+      // Basic health check - in production you'd check database connections, etc.
+      return true;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return false;
+    }
+  }
+  
+  public async validateApiKey(apiKey: string): Promise<boolean> {
+    // In production, validate against your API key store
+    return apiKey === process.env.GEMINI_API_KEY;
+  }
+}
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-app.use('/api', charityRoutes);
-app.use('/api', fundraiserRoutes);
-
-app.get('/health', (_req, res) => res.json({ ok: true }));
-
-app.listen(CONFIG.PORT, () => {
-  console.log(`GiveGuard (in-memory) API running on :${CONFIG.PORT}`);
-  console.log(`GEMINI_API_KEY loaded: ${process.env.GEMINI_API_KEY ? 'Yes' : 'No'}`);
-});
+export const giveGuardServer = GiveGuardServer.getInstance();

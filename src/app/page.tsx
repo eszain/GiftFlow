@@ -119,36 +119,40 @@ export default function Home() {
               >
                 Browse Wishes
               </Link>
+              <Link
+                href="/verify"
+                className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Verify Links
+              </Link>
             </div>
           )}
 
           {user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/wishes"
+                href="/dashboard"
                 className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
-                Browse Wishes
+                Go to Dashboard
               </Link>
               <Link
                 href="/wishes"
                 className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
               >
-                Create Wish
+                Browse Wishes
+              </Link>
+              <Link
+                href="/verify"
+                className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Verify Links
               </Link>
             </div>
           )}
 
           {/* Fundraiser Verification Button */}
-          <div className="mt-8">
-            <Link
-              href="/verify"
-              className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors shadow-lg"
-            >
-              <Shield className="h-5 w-5" />
-              Verify Legitimacy of a Fundraiser
-            </Link>
-          </div>
+       
         </div>
 
         {/* Features Section */}
