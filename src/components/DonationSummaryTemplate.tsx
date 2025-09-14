@@ -41,15 +41,15 @@ export default function DonationSummaryTemplate({
           max-width: 8.5in;
           margin: 0 auto;
           padding: 0.5in;
-          background: white;
-          color: black;
+          background: var(--background);
+          color: var(--foreground);
           line-height: 1.4;
         }
         
         .header {
           text-align: center;
           margin-bottom: 2rem;
-          border-bottom: 2px solid #333;
+          border-bottom: 2px solid var(--border);
           padding-bottom: 1rem;
         }
         
@@ -61,21 +61,21 @@ export default function DonationSummaryTemplate({
         
         .subtitle {
           font-size: 16px;
-          color: #666;
+          color: var(--muted-foreground);
         }
         
         .donor-info {
           margin-bottom: 2rem;
           padding: 1rem;
-          background: #f8f9fa;
-          border: 1px solid #dee2e6;
+          background: var(--muted);
+          border: 1px solid var(--border);
         }
         
         .totals-section {
           margin-bottom: 2rem;
           padding: 1rem;
-          background: #e9ecef;
-          border: 1px solid #ced4da;
+          background: var(--secondary);
+          border: 1px solid var(--border);
         }
         
         .totals-grid {
@@ -88,11 +88,11 @@ export default function DonationSummaryTemplate({
           display: flex;
           justify-content: space-between;
           padding: 0.5rem 0;
-          border-bottom: 1px solid #ced4da;
+          border-bottom: 1px solid var(--border);
         }
         
         .total-item:last-child {
-          border-bottom: 2px solid #333;
+          border-bottom: 2px solid var(--border);
           font-weight: bold;
           font-size: 18px;
         }
@@ -105,20 +105,20 @@ export default function DonationSummaryTemplate({
         
         .donations-table th,
         .donations-table td {
-          border: 1px solid #333;
+          border: 1px solid var(--border);
           padding: 8px;
           text-align: left;
           vertical-align: top;
         }
         
         .donations-table th {
-          background: #f8f9fa;
+          background: var(--muted);
           font-weight: bold;
           text-align: center;
         }
         
         .donations-table tr:nth-child(even) {
-          background: #f8f9fa;
+          background: var(--muted);
         }
         
         .amount {
@@ -131,29 +131,29 @@ export default function DonationSummaryTemplate({
         }
         
         .deductible.yes {
-          color: #28a745;
+          color: var(--primary);
           font-weight: bold;
         }
         
         .deductible.no {
-          color: #dc3545;
+          color: var(--destructive);
           font-weight: bold;
         }
         
         .footer {
           margin-top: 2rem;
           padding-top: 1rem;
-          border-top: 1px solid #333;
+          border-top: 1px solid var(--border);
           font-size: 12px;
-          color: #666;
+          color: var(--muted-foreground);
         }
         
         .print-button {
           position: fixed;
           top: 20px;
           right: 20px;
-          background: #007bff;
-          color: white;
+          background: var(--primary);
+          color: var(--primary-foreground);
           border: none;
           padding: 10px 20px;
           border-radius: 5px;
@@ -163,7 +163,7 @@ export default function DonationSummaryTemplate({
         }
         
         .print-button:hover {
-          background: #0056b3;
+          background: var(--primary);
         }
         
         @media print {
@@ -256,7 +256,7 @@ export default function DonationSummaryTemplate({
                       href={donation.receiptUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      style={{ color: '#007bff', textDecoration: 'underline' }}
+                      style={{ color: 'var(--primary)', textDecoration: 'underline' }}
                     >
                       View Receipt
                     </a>

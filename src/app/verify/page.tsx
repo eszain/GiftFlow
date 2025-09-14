@@ -154,8 +154,8 @@ export default function VerifyPage() {
             <button
               type="submit"
               style={{
-                background: 'linear-gradient(to right, #4f46e5, #9333ea)',
-                color: 'white',
+                background: 'linear-gradient(to right, var(--primary), var(--accent))',
+                color: 'var(--primary-foreground)',
                 border: 'none',
                 cursor: 'pointer'
               }}
