@@ -35,7 +35,7 @@ export default function ShibaScene({ className = '', mousePosition = { x: 0, y: 
         
         {/* Shiba Model */}
         <ShibaModel 
-          position={[0, 1, 0]} 
+          position={[0, 0.7, 0]} 
           scale={[1.33, 1.33, 1.33]}
           rotation={[0, Math.PI * 0.1 + mousePosition.x * 0.5, mousePosition.y * 0.3]}
         />

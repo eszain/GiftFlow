@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Upload, Save } from 'lucide-react';
+import { ArrowLeft, Upload, Save, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function CreateListingPage() {
   const [user, setUser] = useState<any>(null);
@@ -14,12 +15,19 @@ export default function CreateListingPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
     amountRequested: '',
+    charityName: '',
+    charityEin: '',
     images: [] as string[],
     documents: [] as string[],
   });
@@ -34,6 +42,14 @@ export default function CreateListingPage() {
       }
 
       setUser(user);
+      
+      // Pre-populate charity name if available in user metadata
+      if (user?.user_metadata?.charity_name) {
+        setFormData(prev => ({
+          ...prev,
+          charityName: user.user_metadata.charity_name
+        }));
+      }
     };
 
     getUser();
@@ -73,16 +89,19 @@ export default function CreateListingPage() {
       }
 
       // Create listing in Supabase
+      const amount = parseFloat(formData.amountRequested);
       const { data, error: insertError } = await supabase
         .from('listings')
         .insert({
           title: formData.title,
           description: formData.description,
           category: formData.category,
-          amount_requested: parseFloat(formData.amountRequested),
+          original_amount: amount,
+          current_amount: amount,
           charity_id: user.id,
-          charity_name: user.user_metadata?.charity_name || 'Unknown Charity',
+          charity_name: formData.charityName || user.user_metadata?.charity_name || 'Unknown Charity',
           charity_email: user.email,
+          charity_ein: formData.charityEin || null,
           images: formData.images,
           documents: formData.documents,
           tax_deductible: false, // Will be verified later
@@ -102,6 +121,8 @@ export default function CreateListingPage() {
         description: '',
         category: '',
         amountRequested: '',
+        charityName: '',
+        charityEin: '',
         images: [],
         documents: [],
       });
@@ -148,6 +169,10 @@ export default function CreateListingPage() {
                 <span className="text-2xl font-bold text-gray-900">Create New Listing</span>
               </div>
             </div>
+            <Button variant="outline" onClick={handleSignOut} className="flex items-center">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
@@ -236,6 +261,23 @@ export default function CreateListingPage() {
               </select>
             </div>
 
+            {/* Charity Name */}
+            <div>
+              <label htmlFor="charityName" className="block text-sm font-medium text-gray-700 mb-2">
+                Charity/Organization Name *
+              </label>
+              <input
+                type="text"
+                id="charityName"
+                name="charityName"
+                required
+                value={formData.charityName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter your charity or organization name"
+              />
+            </div>
+
             {/* Amount Requested */}
             <div>
               <label htmlFor="amountRequested" className="block text-sm font-medium text-gray-700 mb-2">
@@ -253,6 +295,27 @@ export default function CreateListingPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.00"
               />
+            </div>
+
+            {/* EIN Number */}
+            <div>
+              <label htmlFor="charityEin" className="block text-sm font-medium text-gray-700 mb-2">
+                EIN (Employer Identification Number) (Optional)
+              </label>
+              <input
+                type="text"
+                id="charityEin"
+                name="charityEin"
+                value={formData.charityEin}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="XX-XXXXXXX"
+                pattern="[0-9]{2}-[0-9]{7}"
+                title="Enter EIN in format XX-XXXXXXX"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Your EIN helps with tax verification and faster approval. Format: XX-XXXXXXX
+              </p>
             </div>
 
             {/* Images Upload */}

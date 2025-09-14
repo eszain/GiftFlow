@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Eye, Receipt, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, FileText, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -12,6 +13,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -51,36 +57,36 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
               <Link
                 href="/"
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Home
               </Link>
-              <div className="h-6 w-px bg-gray-300"></div>
+              <div className="h-6 w-px bg-border"></div>
               <div className="flex items-center">
-                <span className="text-2xl font-bold text-gray-900">Dashboard</span>
+                <span className="text-2xl font-bold text-foreground">Dashboard</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   {user.email}
                 </div>
                 <div className="flex items-center justify-end space-x-1">
                   <div className={`text-xs font-medium px-2 py-1 rounded-full ${
                     userRole === 'patron' 
-                      ? 'bg-green-100 text-green-800' 
+                      ? 'bg-secondary text-secondary-foreground' 
                       : userRole === 'charity'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-muted text-muted-foreground'
                   }`}>
                     {userRole === 'patron' ? 'Patron' : 
                      userRole === 'charity' ? 'Charity' : 
@@ -88,6 +94,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+              <Button variant="outline" onClick={handleSignOut} className="flex items-center">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
@@ -101,15 +111,15 @@ export default function DashboardPage() {
           <PatronDashboard />
         ) : (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
               Welcome to GiftFlow
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-muted-foreground mb-8">
               Your account is being set up. Please contact support if you need assistance.
             </p>
             <Link
               href="/"
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Return to Home
             </Link>
@@ -313,28 +323,8 @@ function PatronDashboard() {
           </Link>
         </div>
 
-        {/* My Donations */}
+        {/* Tax Form Preparation */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center mb-4">
-            <Receipt className="h-8 w-8 text-green-600 mr-3" />
-            <h2 className="text-xl font-semibold text-gray-900">Donation Summary</h2>
-          </div>
-          <p className="text-gray-600 mb-6">
-            Track your donations, generate tax summaries, and export receipts for tax filing.
-          </p>
-          <Link
-            href="/dashboard/donations"
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center"
-          >
-            <Receipt className="h-5 w-5 mr-2" />
-            View Donation Summary
-          </Link>
-        </div>
-      </div>
-
-      {/* Tax Form Preparation - Centered on its own row */}
-      <div className="flex justify-center">
-        <div className="bg-white rounded-lg shadow-sm border p-6 max-w-md w-full">
           <div className="flex items-center mb-4">
             <FileText className="h-8 w-8 text-blue-600 mr-3" />
             <h2 className="text-xl font-semibold text-gray-900">Tax Form Preparation</h2>

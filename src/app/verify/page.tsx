@@ -1,8 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Shield, ArrowLeft, ExternalLink, Heart, Search, AlertTriangle, CheckCircle, XCircle, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 function isUrl(value: string) {
   try { new URL(value); return true } catch { return false }
@@ -17,12 +22,64 @@ export default function VerifyPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
 
+  // Animation refs
+  const headerRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const mode: 'url' | 'ein' | 'name' | null = React.useMemo(() => {
     if (!input.trim()) return null;
     if (isUrl(input.trim())) return 'url';
     if (isEin(input.trim())) return 'ein';
     return 'name';
   }, [input]);
+
+  // Animation useEffect
+  useEffect(() => {
+    const tl = gsap.timeline();
+
+    // Set initial states
+    gsap.set([headerRef.current, titleRef.current, formRef.current], { y: 50, opacity: 0 });
+
+    // Animate elements in sequence
+    tl.to(headerRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 0.8,
+      ease: "power2.out"
+    })
+    .to(titleRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 0.8,
+      ease: "power2.out"
+    }, "-=0.4")
+    .to(formRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 0.8,
+      ease: "power2.out"
+    }, "-=0.4");
+
+    // Animate result when it appears
+    if (result && resultRef.current) {
+      gsap.fromTo(resultRef.current,
+        { y: 60, opacity: 0, scale: 0.95 },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.8,
+          ease: "back.out(1.7)"
+        }
+      );
+    }
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
+  }, [result]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,20 +115,20 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-secondary">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
+      <header ref={headerRef} className="bg-card/90 backdrop-blur-sm border-b border-border shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <Link href="/" className=" rounded-xl flex items-center hover:text-gray-900 transition-colors duration-200 group">
-              <ArrowLeft className=" h-5 w-5 mr-2 group-hover:-translate-x-1 text-indigo-600 transition-transform duration-200" />
+            <Link href="/" className=" rounded-xl flex items-center hover:text-foreground transition-colors duration-200 group">
+              <ArrowLeft className=" h-5 w-5 mr-2 group-hover:-translate-x-1 text-primary transition-transform duration-200" />
             </Link>
             <div className="flex items-center">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
-                  <Heart className="h-6 w-6 text-white" />
+                <div className="p-2 bg-primary rounded-xl shadow-lg">
+                  <Heart className="h-6 w-6 text-primary-foreground" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">GiftFlow</span>
+                <span className="text-2xl font-bold text-primary">GiftFlow</span>
               </div>
             </div>
           </div>
@@ -79,27 +136,27 @@ export default function VerifyPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg mb-6">
-            <Shield className="h-8 w-8 text-white" />
+        <div ref={titleRef} className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg mb-6">
+            <Shield className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold text-foreground mb-4">
             Verify Fundraiser Legitimacy
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Ensure your donations go to legitimate causes with our advanced verification system combining 
-            <span className="font-semibold text-indigo-600"> AI analysis</span>, 
-            <span className="font-semibold text-purple-600"> platform verification</span>, and 
-            <span className="font-semibold text-blue-600"> trust scoring</span>
+            <span className="font-semibold text-primary"> AI analysis</span>, 
+            <span className="font-semibold text-accent"> platform verification</span>, and 
+            <span className="font-semibold text-destructive"> trust scoring</span>
           </p>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200/50 p-8">
+        <div ref={formRef} className="bg-card/95 backdrop-blur-sm rounded-3xl shadow-xl border border-border p-8">
           <form onSubmit={onSubmit} className="space-y-8">
             <div className="space-y-4">
-              <label htmlFor="input" className="block text-lg font-semibold text-gray-800 mb-3">
+              <label htmlFor="input" className="block text-lg font-semibold text-foreground mb-3">
                 <div className="flex items-center space-x-2">
-                  <Search className="h-5 w-5 text-indigo-600" />
+                  <Search className="h-5 w-5 text-primary" />
                   <span>Fundraiser URL, Charity Name, or EIN</span>
                 </div>
               </label>
@@ -109,30 +166,30 @@ export default function VerifyPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Paste fundraiser URL, type charity name, or enter EIN"
-                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 placeholder-gray-400"
+                  className="w-full rounded-xl border-2 border-input bg-background px-6 py-4 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-ring/20 focus:border-ring transition-all duration-200 placeholder-muted-foreground"
                 />
                 {mode && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <div className="flex items-center space-x-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium">
-                      <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                    <div className="flex items-center space-x-2 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                       <span className="capitalize">{mode}</span>
                     </div>
                   </div>
                 )}
               </div>
               {mode && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Detected: <span className="font-semibold text-indigo-600 capitalize">{mode}</span></span>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span>Detected: <span className="font-semibold text-primary capitalize">{mode}</span></span>
                 </div>
               )}
             </div>
 
             {mode === 'url' && (
               <div className="space-y-3">
-                <label htmlFor="desc" className="block text-lg font-semibold text-gray-800">
+                <label htmlFor="desc" className="block text-lg font-semibold text-foreground">
                   <div className="flex items-center space-x-2">
-                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    <Sparkles className="h-5 w-5 text-accent" />
                     <span>Additional Description (Optional)</span>
                   </div>
                 </label>
@@ -141,10 +198,10 @@ export default function VerifyPage() {
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder="Paste the fundraiser description here for enhanced AI analysis and risk assessment..."
-                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 placeholder-gray-400 resize-none"
+                  className="w-full rounded-xl border-2 border-input bg-background px-6 py-4 text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-ring/20 focus:border-ring transition-all duration-200 placeholder-muted-foreground resize-none"
                   rows={4}
                 />
-                <p className="text-sm text-gray-500 flex items-center space-x-1">
+                <p className="text-sm text-muted-foreground flex items-center space-x-1">
                   <AlertTriangle className="h-4 w-4" />
                   <span>Providing additional context helps our AI make more accurate assessments</span>
                 </p>
@@ -159,7 +216,7 @@ export default function VerifyPage() {
                 border: 'none',
                 cursor: 'pointer'
               }}
-              className="w-full !bg-gradient-to-r !from-indigo-600 !to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-3"
+                  className="w-full bg-primary text-primary-foreground px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-3"
             >
               {loading ? (
                 <>
@@ -188,12 +245,12 @@ export default function VerifyPage() {
           )}
 
           {result && (
-            <div className="mt-8 space-y-6">
+            <div ref={resultRef} className="mt-8 space-y-6">
               {result.preview && (result.preview.title || result.preview.description || result.preview.image) && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
+                <div className="bg-gradient-to-r from-muted to-secondary border-2 border-border rounded-2xl p-6">
                   <div className="flex items-center space-x-2 mb-4">
-                    <ExternalLink className="h-5 w-5 text-blue-600" />
-                    <h4 className="text-lg font-bold text-gray-900">Preview</h4>
+                    <ExternalLink className="h-5 w-5 text-primary" />
+                    <h4 className="text-lg font-bold text-foreground">Preview</h4>
                   </div>
                   <div className="space-y-4">
                     {result.preview.image && (

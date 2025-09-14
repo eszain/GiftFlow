@@ -37,8 +37,8 @@ export default function SignupPage() {
       }
 
       if (data.user) {
-        // Redirect to home page after successful signup
-        router.push('/');
+        // Redirect to dashboard after successful signup
+        router.push('/dashboard');
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -48,13 +48,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
             Join GiftFlow
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             Create your account to start making a difference
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function SignupPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSignup}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground">
                 Email address
               </label>
               <input
@@ -73,13 +73,13 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input placeholder-muted-foreground text-foreground bg-background rounded-md focus:outline-none focus:ring-ring focus:border-ring focus:z-10 sm:text-sm"
                 placeholder="Enter your email"
               />
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground">
                 Password
               </label>
               <input
@@ -90,13 +90,13 @@ export default function SignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input placeholder-muted-foreground text-foreground bg-background rounded-md focus:outline-none focus:ring-ring focus:border-ring focus:z-10 sm:text-sm"
                 placeholder="Create a password"
               />
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="role" className="block text-sm font-medium text-foreground">
                 I want to be a:
               </label>
               <select
@@ -104,7 +104,7 @@ export default function SignupPage() {
                 name="role"
                 value={role}
                 onChange={(e) => setRole(e.target.value as 'patron' | 'charity')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-ring sm:text-sm"
               >
                 <option value="patron">Patron (I want to help charities)</option>
                 <option value="charity">Charity (I need help)</option>
@@ -113,7 +113,7 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">
+            <div className="text-destructive text-sm text-center">
               {error}
             </div>
           )}
@@ -122,16 +122,16 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link href="/login" className="font-medium text-primary hover:text-primary/80">
                 Sign in
               </Link>
             </p>

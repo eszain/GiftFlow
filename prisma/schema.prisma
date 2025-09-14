@@ -18,7 +18,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  listings Listing[]
+  listings  Listing[]
+  donations Donation[]
 
   @@map("users")
 }
@@ -28,12 +29,14 @@ model Listing {
   title               String
   description         String
   category            String
-  amountRequested     Decimal  @map("amount_requested")
+  originalAmount      Decimal  @map("original_amount")
+  currentAmount       Decimal  @map("current_amount")
   amountRaised        Decimal  @default(0) @map("amount_raised")
   status              String   @default("active") // 'active', 'fulfilled', 'cancelled'
   charityId           String   @map("charity_id")
   charityName         String   @map("charity_name")
   charityEmail        String   @map("charity_email")
+  charityEin          String?  @map("charity_ein") // EIN (Employer Identification Number)
   images              String[] // Array of image URLs
   documents           String[] // Array of document URLs for tax verification
   taxDeductible       Boolean  @default(false) @map("tax_deductible")
@@ -42,7 +45,30 @@ model Listing {
   updatedAt           DateTime @updatedAt @map("updated_at")
 
   // Relations
-  charity User @relation(fields: [charityId], references: [id], onDelete: Cascade)
+  charity   User       @relation(fields: [charityId], references: [id], onDelete: Cascade)
+  donations Donation[]
 
   @@map("listings")
+}
+
+model Donation {
+  id               String    @id @default(cuid())
+  patronId         String    @map("patron_id")
+  listingId        String    @map("listing_id")
+  organizationName String    @map("organization_name")
+  einNumber        String?   @map("ein_number")
+  amountCents      Int       @map("amount_cents") // Amount in cents to avoid floating point issues
+  currency         String    @default("USD")
+  deductible       Boolean   @default(false)
+  receiptUrl       String?   @map("receipt_url")
+  receiptData      Json?     @map("receipt_data") // Store receipt metadata
+  donationDate     DateTime  @default(now()) @map("donation_date")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  patron  User    @relation(fields: [patronId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("donations")
 }

@@ -4,16 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Heart, DollarSign, Calendar, MapPin, Filter } from 'lucide-react';
+import { ArrowLeft, Heart, DollarSign, Calendar, MapPin, Filter, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Listing {
   id: string;
   title: string;
   description: string;
   category: string;
-  amount_requested: number;
+  original_amount: number;
+  current_amount: number;
   amount_raised: number;
   charity_name: string;
+  charity_ein: string | null;
   created_at: string;
   images: string[];
 }
@@ -33,6 +36,11 @@ export default function PatronListingsPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
   const categories = [
     'education',
     'healthcare', 
@@ -48,7 +56,10 @@ export default function PatronListingsPage() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
+      console.log('User data:', user);
+      
       if (!user || user.user_metadata?.role !== 'patron') {
+        console.log('User not authorized:', { user, role: user?.user_metadata?.role });
         router.push('/dashboard');
         return;
       }
@@ -113,8 +124,8 @@ export default function PatronListingsPage() {
     return colors[category] || colors.other;
   };
 
-  const getFundingPercentage = (raised: number, requested: number) => {
-    return Math.round((raised / requested) * 100);
+  const getFundingPercentage = (raised: number, original: number) => {
+    return Math.round((raised / original) * 100);
   };
 
   const handleDonateClick = (listing: Listing) => {
@@ -130,17 +141,63 @@ export default function PatronListingsPage() {
     setDonating(true);
     try {
       const amount = parseFloat(donationAmount);
+      const amountCents = Math.round(amount * 100); // Convert to cents
+      const newCurrentAmount = Math.max(0, donationModal.listing.current_amount - amount);
       const newRaisedAmount = donationModal.listing.amount_raised + amount;
 
-      // Update the listing's raised amount
-      const { error } = await supabase
+      // First, create the donation record
+      console.log('Creating donation with data:', {
+        patron_id: user.id,
+        listing_id: donationModal.listing.id,
+        organization_name: donationModal.listing.charity_name,
+        ein_number: donationModal.listing.charity_ein,
+        amount_cents: amountCents,
+        currency: 'USD',
+        deductible: donationModal.listing.tax_deductible || false,
+        donation_date: new Date().toISOString()
+      });
+
+      const { data: donationData, error: donationError } = await supabase
+        .from('donations')
+        .insert({
+          patron_id: user.id,
+          listing_id: donationModal.listing.id,
+          organization_name: donationModal.listing.charity_name,
+          ein_number: donationModal.listing.charity_ein,
+          amount_cents: amountCents,
+          currency: 'USD',
+          deductible: donationModal.listing.tax_deductible || false,
+          donation_date: new Date().toISOString()
+        })
+        .select();
+
+      if (donationError) {
+        console.error('Error creating donation record:', donationError);
+        setError(`Failed to create donation record: ${donationError.message}`);
+        return;
+      }
+
+      console.log('Donation record created:', donationData);
+
+      // Then update the listing's current amount and raised amount
+      const { data, error } = await supabase
         .from('listings')
-        .update({ amount_raised: newRaisedAmount })
-        .eq('id', donationModal.listing.id);
+        .update({ 
+          current_amount: newCurrentAmount,
+          amount_raised: newRaisedAmount 
+        })
+        .eq('id', donationModal.listing.id)
+        .select();
 
       if (error) {
         console.error('Error updating listing:', error);
-        setError('Failed to process donation. Please try again.');
+        setError(`Failed to process donation: ${error.message}`);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.error('No rows updated');
+        setError('Failed to update listing. Please try again.');
         return;
       }
 
@@ -148,7 +205,11 @@ export default function PatronListingsPage() {
       setListings(prevListings => 
         prevListings.map(listing => 
           listing.id === donationModal.listing!.id 
-            ? { ...listing, amount_raised: newRaisedAmount }
+            ? { 
+                ...listing, 
+                current_amount: newCurrentAmount,
+                amount_raised: newRaisedAmount 
+              }
             : listing
         )
       );
@@ -158,7 +219,7 @@ export default function PatronListingsPage() {
       setDonationAmount('');
       
       // Show success message
-      alert(`Thank you for your donation of $${amount.toFixed(2)}!`);
+      alert(`Thank you for your donation of $${amount.toFixed(2)}! Your donation has been recorded.`);
       
     } catch (err) {
       console.error('Donation error:', err);
@@ -203,6 +264,10 @@ export default function PatronListingsPage() {
                 <span className="text-2xl font-bold text-gray-900">Browse Listings</span>
               </div>
             </div>
+            <Button variant="outline" onClick={handleSignOut} className="flex items-center">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
@@ -294,7 +359,7 @@ export default function PatronListingsPage() {
                 <div className="grid md:grid-cols-3 gap-4 mb-6">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-indigo-600">
-                      ${listing.amount_requested.toLocaleString()}
+                      ${listing.original_amount.toLocaleString()}
                     </div>
                     <div className="text-sm text-gray-600">Goal</div>
                   </div>
@@ -306,7 +371,7 @@ export default function PatronListingsPage() {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      {getFundingPercentage(listing.amount_raised, listing.amount_requested)}%
+                      {getFundingPercentage(listing.amount_raised, listing.original_amount)}%
                     </div>
                     <div className="text-sm text-gray-600">Funded</div>
                   </div>
@@ -318,7 +383,7 @@ export default function PatronListingsPage() {
                     <div
                       className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${Math.min(getFundingPercentage(listing.amount_raised, listing.amount_requested), 100)}%`
+                        width: `${Math.min(getFundingPercentage(listing.amount_raised, listing.original_amount), 100)}%`
                       }}
                     ></div>
                   </div>
@@ -326,7 +391,7 @@ export default function PatronListingsPage() {
 
                 <div className="flex justify-between items-center">
                   <div className="text-sm text-gray-500">
-                    ${(listing.amount_requested - listing.amount_raised).toLocaleString()} still needed
+                    ${listing.current_amount.toLocaleString()} still needed
                   </div>
                   <div className="flex space-x-2">
                     <button 
@@ -368,7 +433,7 @@ export default function PatronListingsPage() {
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex justify-between text-sm mb-2">
                   <span>Goal:</span>
-                  <span className="font-semibold">${donationModal.listing.amount_requested.toLocaleString()}</span>
+                  <span className="font-semibold">${donationModal.listing.original_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-2">
                   <span>Raised:</span>
@@ -377,7 +442,7 @@ export default function PatronListingsPage() {
                 <div className="flex justify-between text-sm">
                   <span>Still needed:</span>
                   <span className="font-semibold text-red-600">
-                    ${(donationModal.listing.amount_requested - donationModal.listing.amount_raised).toLocaleString()}
+                    ${donationModal.listing.current_amount.toLocaleString()}
                   </span>
                 </div>
               </div>

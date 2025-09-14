@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Calculator, Download, AlertTriangle, CheckCircle, Plus, Trash2, Edit3 } from 'lucide-react';
+import { FileText, Calculator, Download, AlertTriangle, CheckCircle, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
 import { CashDonation, NonCashDonation, TaxFormData } from '@/lib/tax-forms/types';
 
 export default function TaxFormsPage() {
@@ -17,54 +20,60 @@ export default function TaxFormsPage() {
     zip: ''
   });
   const [loading, setLoading] = useState(false);
+  const [fetchingDonations, setFetchingDonations] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taxFormData, setTaxFormData] = useState<TaxFormData | null>(null);
-  const [showAddDonation, setShowAddDonation] = useState(false);
-  const [editingDonation, setEditingDonation] = useState<string | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editFormData, setEditFormData] = useState<Partial<CashDonation | NonCashDonation>>({});
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
-  // Sample data for demonstration
+  // Fetch donations from the donations table
   useEffect(() => {
-    setDonations([
-      {
-        id: '1',
-        date: '2024-03-15',
-        charityName: 'American Red Cross',
-        charityEIN: '13-5562300',
-        amount: 5000, // $50.00
-        isIRSQualified: true,
-        hasAcknowledgment: true,
-        acknowledgmentDate: '2024-03-20',
-        description: 'Emergency relief fund'
-      },
-      {
-        id: '2',
-        date: '2024-06-20',
-        charityName: 'Local Food Bank',
-        charityEIN: '12-3456789',
-        description: 'Used clothing and household items',
-        fairMarketValue: 15000, // $150.00
-        isIRSQualified: true,
-        hasAppraisal: false,
-        acquisitionDate: '2020-01-01',
-        acquisitionCost: 20000, // $200.00
-        methodOfAcquisition: 'purchase'
-      },
-      {
-        id: '3',
-        date: '2024-11-25',
-        charityName: 'Personal GoFundMe',
-        charityEIN: '',
-        amount: 2500, // $25.00
-        isIRSQualified: false,
-        hasAcknowledgment: false,
-        description: 'Support for local family'
+    fetchDonations();
+  }, [taxYear]);
+
+  const fetchDonations = async () => {
+    try {
+      setFetchingDonations(true);
+      setError(null);
+
+      const response = await fetch(`/api/donations/summary?year=${taxYear}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch donations (${response.status})`);
       }
-    ]);
-  }, []);
+      
+      const data = await response.json();
+      
+      // Convert the API response to the format expected by the tax forms
+      const convertedDonations: (CashDonation | NonCashDonation)[] = data.donations.map((donation: any) => ({
+        id: donation.id,
+        date: donation.date,
+        charityName: donation.organizationName,
+        charityEIN: donation.ein || '',
+        amount: donation.amount, // Already in cents
+        isIRSQualified: donation.deductible,
+        hasAcknowledgment: !!donation.receiptUrl,
+        acknowledgmentDate: donation.receiptUrl ? donation.date : undefined,
+        description: `Donation to ${donation.organizationName}${donation.listingTitle ? ` - ${donation.listingTitle}` : ''}`
+      }));
+
+      setDonations(convertedDonations);
+    } catch (err) {
+      console.error('Error fetching donations:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch donations');
+      setDonations([]);
+    } finally {
+      setFetchingDonations(false);
+    }
+  };
 
   const generateTaxForms = async () => {
     try {
@@ -818,35 +827,6 @@ export default function TaxFormsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const addDonation = (donation: CashDonation | NonCashDonation) => {
-    setDonations(prev => [...prev, donation]);
-    setShowAddDonation(false);
-  };
-
-  const updateDonation = (id: string, updatedDonation: CashDonation | NonCashDonation) => {
-    setDonations(prev => prev.map(d => d.id === id ? updatedDonation : d));
-    setEditingDonation(null);
-    setShowEditModal(false);
-    setEditFormData({});
-  };
-
-  const handleEditClick = (donation: CashDonation | NonCashDonation) => {
-    setEditingDonation(donation.id);
-    setEditFormData(donation);
-    setShowEditModal(true);
-  };
-
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingDonation && editFormData) {
-      const updatedDonation = { ...editFormData, id: editingDonation } as CashDonation | NonCashDonation;
-      updateDonation(editingDonation, updatedDonation);
-    }
-  };
-
-  const deleteDonation = (id: string) => {
-    setDonations(prev => prev.filter(d => d.id !== id));
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -884,6 +864,10 @@ export default function TaxFormsPage() {
               >
                 ← Back to Dashboard
               </Link>
+              <Button variant="outline" onClick={handleSignOut} className="flex items-center">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
@@ -981,17 +965,50 @@ export default function TaxFormsPage() {
         {/* Donations List */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Donations</h2>
-            <button
-              onClick={() => setShowAddDonation(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Donation
-            </button>
+            <h2 className="text-lg font-semibold text-gray-900">Donations for {taxYear}</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={fetchDonations}
+                disabled={fetchingDonations}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {fetchingDonations ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/donations-table');
+                    const data = await response.json();
+                    console.log('Debug donations table:', data);
+                    alert(`Debug info logged to console. Check browser console for details.`);
+                  } catch (err) {
+                    console.error('Debug error:', err);
+                    alert('Debug failed. Check console for details.');
+                  }
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Debug
+              </button>
+            </div>
           </div>
 
-          {donations.length > 0 ? (
+          {fetchingDonations ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading donations for {taxYear}...</p>
+            </div>
+          ) : donations.length > 0 ? (
             <div className="space-y-4">
               {donations.map((donation) => (
                 <div key={donation.id} className="border border-gray-200 rounded-lg p-4">
@@ -1026,18 +1043,17 @@ export default function TaxFormsPage() {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditClick(donation)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteDonation(donation.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {donation.receiptUrl && (
+                        <a
+                          href={donation.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-900"
+                          title="View Receipt"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1046,8 +1062,10 @@ export default function TaxFormsPage() {
           ) : (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No donations added</h3>
-              <p className="mt-1 text-sm text-gray-500">Add your charitable donations to generate tax forms.</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No donations found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                No donations were found for the year {taxYear}. Make donations through the listings page to see them here.
+              </p>
             </div>
           )}
         </div>
@@ -1058,8 +1076,13 @@ export default function TaxFormsPage() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Generate Tax Forms</h3>
               <p className="text-sm text-gray-600">
-                Generate draft Schedule A and Form 8283 based on your donations
+                Generate draft Schedule A and Form 8283 based on your donations from {taxYear}
               </p>
+              {donations.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Found {donations.length} donation{donations.length !== 1 ? 's' : ''} for tax year {taxYear}
+                </p>
+              )}
             </div>
             <button
               onClick={generateTaxForms}
@@ -1216,206 +1239,6 @@ export default function TaxFormsPage() {
           </div>
         )}
 
-        {/* Edit Donation Modal */}
-        {showEditModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowEditModal(false)}></div>
-              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                <form onSubmit={handleEditSubmit}>
-                  <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">Edit Donation</h3>
-                      <button
-                        type="button"
-                        onClick={() => setShowEditModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <span className="sr-only">Close</span>
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Charity Name</label>
-                          <input
-                            type="text"
-                            value={editFormData.charityName || ''}
-                            onChange={(e) => setEditFormData(prev => ({ ...prev, charityName: e.target.value }))}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            EIN {editFormData.isIRSQualified && <span className="text-red-500">*</span>}
-                          </label>
-                          <input
-                            type="text"
-                            value={editFormData.charityEIN || ''}
-                            onChange={(e) => setEditFormData(prev => ({ ...prev, charityEIN: e.target.value }))}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            placeholder="XX-XXXXXXX or XXXXXXXXX"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            {editFormData.isIRSQualified 
-                              ? 'Required for IRS qualified donations. Format: XX-XXXXXXX or XXXXXXXXX'
-                              : 'Optional for non-IRS qualified donations'
-                            }
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                          <input
-                            type="date"
-                            value={editFormData.date || ''}
-                            onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={isCashDonation(editFormData) ? (editFormData.amount || 0) / 100 : (editFormData as NonCashDonation).fairMarketValue ? ((editFormData as NonCashDonation).fairMarketValue || 0) / 100 : 0}
-                            onChange={(e) => {
-                              const amount = Math.round(parseFloat(e.target.value || '0') * 100);
-                              if (isCashDonation(editFormData)) {
-                                setEditFormData(prev => ({ ...prev, amount }));
-                              } else {
-                                setEditFormData(prev => ({ ...prev, fairMarketValue: amount }));
-                              }
-                            }}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                          <input
-                            type="text"
-                            value={editFormData.description || ''}
-                            onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                          />
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={editFormData.isIRSQualified || false}
-                              onChange={(e) => setEditFormData(prev => ({ ...prev, isIRSQualified: e.target.checked }))}
-                              className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">IRS Qualified</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {isCashDonation(editFormData) ? (
-                        <div className="flex items-center space-x-4">
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={editFormData.hasAcknowledgment || false}
-                              onChange={(e) => setEditFormData(prev => ({ ...prev, hasAcknowledgment: e.target.checked }))}
-                              className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">Has Acknowledgment</span>
-                          </label>
-                          {editFormData.hasAcknowledgment && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Acknowledgment Date</label>
-                              <input
-                                type="date"
-                                value={editFormData.acknowledgmentDate || ''}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, acknowledgmentDate: e.target.value }))}
-                                className="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-4">
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={(editFormData as NonCashDonation).hasAppraisal || false}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, hasAppraisal: e.target.checked }))}
-                                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                              />
-                              <span className="ml-2 text-sm text-gray-700">Has Appraisal</span>
-                            </label>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Acquisition Date</label>
-                              <input
-                                type="date"
-                                value={(editFormData as NonCashDonation).acquisitionDate || ''}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, acquisitionDate: e.target.value }))}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Acquisition Cost ($)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={((editFormData as NonCashDonation).acquisitionCost || 0) / 100}
-                                onChange={(e) => {
-                                  const cost = Math.round(parseFloat(e.target.value || '0') * 100);
-                                  setEditFormData(prev => ({ ...prev, acquisitionCost: cost }));
-                                }}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Method of Acquisition</label>
-                              <select
-                                value={(editFormData as NonCashDonation).methodOfAcquisition || 'other'}
-                                onChange={(e) => setEditFormData(prev => ({ ...prev, methodOfAcquisition: e.target.value as any }))}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                              >
-                                <option value="purchase">Purchase</option>
-                                <option value="gift">Gift</option>
-                                <option value="inheritance">Inheritance</option>
-                                <option value="other">Other</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button
-                      type="submit"
-                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
-                    >
-                      Update Donation
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowEditModal(false)}
-                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -4,17 +4,20 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Eye, Edit, Trash2, DollarSign, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Edit, Trash2, DollarSign, Calendar, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Listing {
   id: string;
   title: string;
   description: string;
   category: string;
-  amount_requested: number;
+  original_amount: number;
+  current_amount: number;
   amount_raised: number;
   status: string;
   verification_status: string;
+  charity_ein: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +29,11 @@ export default function CharityListingsPage() {
   const [error, setError] = useState('');
   const router = useRouter();
   const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -90,6 +98,10 @@ export default function CharityListingsPage() {
     }
   };
 
+  const getFundingPercentage = (raised: number, original: number) => {
+    return Math.round((raised / original) * 100);
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -120,13 +132,19 @@ export default function CharityListingsPage() {
                 <span className="text-2xl font-bold text-gray-900">My Listings</span>
               </div>
             </div>
-            <Link
-              href="/dashboard/charity/create"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Create New
-            </Link>
+            <div className="flex items-center space-x-3">
+              <Link
+                href="/dashboard/charity/create"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create New
+              </Link>
+              <Button variant="outline" onClick={handleSignOut} className="flex items-center">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -189,23 +207,48 @@ export default function CharityListingsPage() {
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-4 gap-4 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      <span className="font-medium">${listing.amount_requested.toLocaleString()}</span>
-                      <span className="ml-1">requested</span>
+                  <div className="grid md:grid-cols-3 gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-indigo-600">
+                        ${listing.original_amount.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">Goal</div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <DollarSign className="h-4 w-4 mr-2 text-green-600" />
-                      <span className="font-medium text-green-600">${listing.amount_raised.toLocaleString()}</span>
-                      <span className="ml-1">raised</span>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        ${listing.amount_raised.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">Raised</div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span className="font-medium capitalize">{listing.category}</span>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {getFundingPercentage(listing.amount_raised, listing.original_amount)}%
+                      </div>
+                      <div className="text-sm text-gray-600">Funded</div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span>{new Date(listing.created_at).toLocaleDateString()}</span>
+                  </div>
+
+                  {/* EIN Display */}
+                  {listing.charity_ein && (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <span className="font-medium mr-2">EIN:</span>
+                        <span className="font-mono bg-white px-2 py-1 rounded border">
+                          {listing.charity_ein}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Progress Bar */}
+                  <div className="mb-6">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(getFundingPercentage(listing.amount_raised, listing.original_amount), 100)}%`
+                        }}
+                      ></div>
                     </div>
                   </div>
 
@@ -223,8 +266,9 @@ export default function CharityListingsPage() {
                         Edit
                       </button>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {Math.round((listing.amount_raised / listing.amount_requested) * 100)}% funded
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>{new Date(listing.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>

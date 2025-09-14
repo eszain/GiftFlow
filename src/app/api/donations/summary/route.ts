@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { donations, charities } from '@/lib/giveguard/store';
 
 export interface DonationSummary {
-  id: number;
+  id: string;
   date: string;
   organizationName: string;
   ein?: string;
@@ -13,6 +12,8 @@ export interface DonationSummary {
   deductible: boolean;
   subjectType: 'charity' | 'personal';
   receiptUrl?: string;
+  listingTitle?: string;
+  listingId?: string;
 }
 
 export interface DonationTotals {
@@ -38,48 +39,46 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
 
-    // For now, we'll use the in-memory donations array
-    // In production, you'd fetch from a proper database filtered by user ID
-    const userDonations = donations.filter(donation => {
-      const donationYear = new Date(donation.createdAt).getFullYear();
-      return donationYear === year;
-    });
+    // Get donations for the user filtered by year using Supabase directly
+    const { data: donations, error: donationsError } = await supabase
+      .from('donations')
+      .select(`
+        *,
+        listing:listings(
+          title,
+          charity_name,
+          charity_ein,
+          tax_deductible
+        )
+      `)
+      .eq('patron_id', user.id)
+      .gte('donation_date', `${year}-01-01`)
+      .lt('donation_date', `${year + 1}-01-01`)
+      .order('donation_date', { ascending: false });
+
+    if (donationsError) {
+      console.error('Error fetching donations:', donationsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch donations', details: donationsError.message },
+        { status: 500 }
+      );
+    }
 
     // Convert donations to summary format
-    const donationSummaries: DonationSummary[] = userDonations.map(donation => {
-      let organizationName = 'Unknown Organization';
-      let ein: string | undefined;
-
-      if (donation.subjectType === 'charity') {
-        // Find charity by EIN or subjectId
-        const charity = charities.find(c => 
-          c.ein === donation.subjectId?.toString() || 
-          c.ein === donation.subjectId?.toString()
-        );
-        if (charity) {
-          organizationName = charity.name;
-          ein = charity.ein;
-        }
-      } else {
-        organizationName = 'Personal Fundraiser';
-      }
-
-      // Convert amount to USD (assuming all amounts are in cents)
-      const amountUSD = donation.currency === 'USD' ? donation.amount / 100 : donation.amount / 100;
-
-      return {
-        id: donation.id,
-        date: donation.createdAt.toISOString().split('T')[0], // YYYY-MM-DD format
-        organizationName,
-        ein,
-        amount: donation.amount,
-        amountUSD,
-        currency: donation.currency,
-        deductible: donation.deductible,
-        subjectType: donation.subjectType,
-        receiptUrl: `/receipts/${donation.id}` // Placeholder for receipt URL
-      };
-    });
+    const donationSummaries: DonationSummary[] = (donations || []).map(donation => ({
+      id: donation.id,
+      date: donation.donation_date.split('T')[0], // YYYY-MM-DD format
+      organizationName: donation.organization_name,
+      ein: donation.ein_number,
+      amount: donation.amount_cents,
+      amountUSD: donation.amount_cents / 100, // Convert cents to dollars
+      currency: donation.currency,
+      deductible: donation.deductible,
+      subjectType: donation.listing?.tax_deductible ? 'charity' : 'personal',
+      receiptUrl: donation.receipt_url,
+      listingTitle: donation.listing?.title,
+      listingId: donation.listing_id
+    }));
 
     // Calculate totals
     const totals: DonationTotals = {
