@@ -121,7 +121,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/verify"
-                className="bg-purple-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
                 Verify Links
               </Link>
@@ -144,7 +144,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/verify"
-                className="bg-purple-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
                 Verify Links
               </Link>
@@ -152,15 +152,7 @@ export default function Home() {
           )}
 
           {/* Fundraiser Verification Button */}
-          <div className="mt-8">
-            <Link
-              href="/verify"
-              className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors shadow-lg"
-            >
-              <Shield className="h-5 w-5" />
-              Verify Legitimacy of a Fundraiser
-            </Link>
-          </div>
+       
         </div>
 
         {/* Features Section */}
