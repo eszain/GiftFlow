@@ -59,7 +59,7 @@ export default function TaxFormsPage() {
         charityName: donation.organizationName,
         charityEIN: donation.ein || '',
         amount: donation.amount, // Already in cents
-        isIRSQualified: donation.deductible,
+        isIRSQualified: true, // Always treat donations as qualified for tax form generation
         hasAcknowledgment: !!donation.receiptUrl,
         acknowledgmentDate: donation.receiptUrl ? donation.date : undefined,
         description: `Donation to ${donation.organizationName}${donation.listingTitle ? ` - ${donation.listingTitle}` : ''}`
