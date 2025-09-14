@@ -28,6 +28,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        {/* Social Intents Chatbot */}
+        <script 
+          src="https://www.socialintents.com/api/chat/socialintents.1.4.js#2c9faa359925d2fe019942f01da133c9" 
+          async
+        />
       </body>
     </html>
   );
